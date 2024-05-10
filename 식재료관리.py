@@ -16,7 +16,7 @@ def add_ingredient():
     input_frame = tk.Toplevel(root)
     input_frame.title("식재료 추가")
 
-    # 각 항목에 대한 라벨 및 입력 필드 생성
+    # 각 항목에 대한 레이블 및 입력 필드 생성
     tk.Label(input_frame, text="종류:").grid(row=0, column=0)
     tk.Label(input_frame, text="수량:").grid(row=1, column=0)
     tk.Label(input_frame, text="개당 가격:").grid(row=2, column=0)
