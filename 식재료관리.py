@@ -65,7 +65,7 @@ def delete_ingredient():
     input_frame = tk.Toplevel(root) # 새로운 창 생성
     input_frame.title("식재료 삭제")    # 새로운 창의 제목 = 식재료 삭제
 
-    # 라벨 및 입력 필드 생성
+    # 레이블 및 입력 필드 생성
     # 식재료 명 입력받고 해당 식재료를 데이터 프레임에서 삭제함
     tk.Label(input_frame, text="식재료 명:").grid(row=0, column=0)
     name_entry = tk.Entry(input_frame)
