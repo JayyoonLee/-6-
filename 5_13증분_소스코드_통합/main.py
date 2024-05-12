@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import Frame, Button
 
 # 모듈 임포트
-import module1, module2, module3, module4
+import Pantry_List, Pantry_State, Recipe_List, Recipe_Cost
 
 # 프레임을 초기화하는 함수
 def initialize_frame(module, frame):
@@ -27,10 +27,10 @@ main_frame.pack(fill=tk.BOTH, expand=True)
 
 # 각 모듈에 대한 버튼 추가
 buttons = [
-    Button(button_frame, text="식재료 관리", command=lambda: initialize_frame(module1, main_frame)),
-    Button(button_frame, text="재고 관리", command=lambda: initialize_frame(module2, main_frame)),
-    Button(button_frame, text="레시피 관리", command=lambda: initialize_frame(module3, main_frame)),
-    Button(button_frame, text="레시피 원가 관리", command=lambda: initialize_frame(module4, main_frame))
+    Button(button_frame, text="식재료 관리", command=lambda: initialize_frame(Pantry_List, main_frame)),
+    Button(button_frame, text="재고 관리", command=lambda: initialize_frame(Pantry_State, main_frame)),
+    Button(button_frame, text="레시피 관리", command=lambda: initialize_frame(Recipe_List, main_frame)),
+    Button(button_frame, text="레시피 원가 관리", command=lambda: initialize_frame(Recipe_Cost, main_frame))
 ]
 
 # 버튼을 버튼 프레임에 배치
