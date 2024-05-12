@@ -3,7 +3,7 @@ from tkinter import messagebox
 from collections import defaultdict
 
 # 사용자 레시피 데이터와 요리 횟수, 식재료를 저장할 딕셔너리
-user_recipes = defaultdict(lambda: {'count': 0, 'ingredients': []})
+user_recipes = defaultdict(lambda: {'count': 0, 'ingredients': set()})
 
 # 인기 메뉴 추천 함수
 def recommend_popular_menu():
@@ -31,12 +31,16 @@ def recommend_popular_menu():
 
 # 레시피를 리스트에 추가하는 함수
 def add_recipe():
-    recipe = recipe_entry.get()
-    ingredients = ingredient_entry.get().split(",")
+    recipe = recipe_entry.get().strip()
+    ingredients = [ingredient.strip() for ingredient in ingredient_entry.get().split(",") if ingredient.strip()]
     if recipe:
+        if not ingredients:
+            messagebox.showerror("오류", "하나 이상의 식재료를 입력해주세요.")
+            return
+        
         # 레시피와 요리 횟수를 저장
         user_recipes[recipe]['count'] += 1
-        user_recipes[recipe]['ingredients'].extend(ingredients)
+        user_recipes[recipe]['ingredients'].update(ingredients)
         
         recipe_entry.delete(0, tk.END)  # 레시피 입력 필드 초기화
         ingredient_entry.delete(0, tk.END)  # 식재료 입력 필드 초기화
@@ -49,22 +53,22 @@ root = tk.Tk()
 root.title("인기 메뉴 추천 시스템")
 
 # 레시피 입력 필드
-tk.Label(root, text="레시피 입력:").pack()
+tk.Label(root, text="레시피 입력:").pack(pady=(10, 2))
 recipe_entry = tk.Entry(root)
-recipe_entry.pack()
+recipe_entry.pack(pady=(0, 10))
 
 # 식재료 입력 필드
-tk.Label(root, text="식재료 입력 (쉼표로 구분):").pack()
+tk.Label(root, text="식재료 입력 (쉼표로 구분):").pack(pady=(0, 2))
 ingredient_entry = tk.Entry(root)
-ingredient_entry.pack()
+ingredient_entry.pack(pady=(0, 10))
 
 # 레시피 추가 버튼
 add_button = tk.Button(root, text="레시피 추가", command=add_recipe)
-add_button.pack()
+add_button.pack(pady=(0, 5))
 
 # 인기 메뉴 추천 버튼
 recommend_button = tk.Button(root, text="인기 메뉴 추천", command=recommend_popular_menu)
-recommend_button.pack()
+recommend_button.pack(pady=(5, 10))
 
 # 메인 루프 실행
 root.mainloop()
