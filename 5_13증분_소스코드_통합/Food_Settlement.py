@@ -5,7 +5,7 @@ class RestaurantGUI:
     def __init__(self, master):
         self.master = master
         self.master.title("음식 정산 프로그램")
-        self.master.geometry("800x600")
+        self.master.geometry("1600x600")
         self.master.config(bg="#f0f0f0")
 
         self.restaurant = None
