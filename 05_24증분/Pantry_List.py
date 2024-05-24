@@ -2,13 +2,25 @@ import tkinter as tk
 from tkinter import messagebox
 import pandas as pd
 from datetime import datetime
+import os
 
-# 식재료 정보 담는 데이터프레임 생성
-df = pd.DataFrame(columns=["Name", "Quantity", "Unit Price", "Location", "Expiration Date"])
+# CSV 파일 경로
+CSV_FILE_PATH = "ingredients.csv"
+
+# CSV 파일이 있으면 로드하고, 없으면 빈 데이터프레임 생성
+if os.path.exists(CSV_FILE_PATH):
+    df = pd.read_csv(CSV_FILE_PATH)
+else:
+    df = pd.DataFrame(columns=["Name", "Quantity", "Unit Price", "Location", "Expiration Date"])
 
 # UI 스타일 적용 함수
 def apply_styles(widget, font=("Helvetica", 14), bg=None, fg="white"):
     widget.config(font=font, bg=bg, fg=fg, relief="solid")
+
+# CSV 파일에 데이터프레임 저장 함수
+def save_to_csv():
+    df.to_csv(CSV_FILE_PATH, index=False)
+    print(f"Saved dataframe to {CSV_FILE_PATH}")
 
 # 새로운 식재료 추가 함수
 def add_ingredient(frame):
@@ -41,6 +53,7 @@ def add_ingredient(frame):
             return
 
         df.loc[len(df)] = data.values()
+        save_to_csv()
         messagebox.showinfo("추가 완료", f"{data['종류']}이(가) 추가되었습니다.")
         input_frame.destroy()
 
@@ -50,6 +63,7 @@ def add_ingredient(frame):
 
 # 식재료 조회 함수
 def show_ingredients():
+    df = pd.read_csv(CSV_FILE_PATH)  # CSV 파일에서 데이터 읽기
     messagebox.showinfo("식재료 목록", df.to_string(index=False))
 
 # 식재료 삭제 함수
@@ -64,8 +78,11 @@ def delete_ingredient(frame):
 
     def confirm():
         name = name_entry.get()
+        global df
+        df = pd.read_csv(CSV_FILE_PATH)  # CSV 파일에서 데이터 읽기
         if name in df["Name"].values:
             df.drop(df[df["Name"] == name].index, inplace=True)
+            save_to_csv()
             messagebox.showinfo("성공", f"{name} 삭제되었습니다!")
         else:
             messagebox.showerror("오류", f"{name}을(를) 찾을 수 없습니다!")
@@ -77,11 +94,13 @@ def delete_ingredient(frame):
 
 # 유통기한 알림 확인 함수
 def check_expiration():
+    df = pd.read_csv(CSV_FILE_PATH)  # CSV 파일에서 데이터 읽기
     today = datetime.today().strftime("%Y-%m-%d")
     expired_ingredients = df[df["Expiration Date"] < today]
     if not expired_ingredients.empty:
         for index, row in expired_ingredients.iterrows():
             df.drop(index, inplace=True)
+        save_to_csv()
         messagebox.showinfo("유통기한 알림", "유통기한이 만료된 식재료가 삭제되었습니다.")
     else:
         messagebox.showinfo("유통기한 알림", "현재 유통기한이 만료된 식재료가 없습니다.")
