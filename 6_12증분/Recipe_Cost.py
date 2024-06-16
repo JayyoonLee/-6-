@@ -1,9 +1,8 @@
-import tkinter as tk    
-from tkinter import messagebox, ttk 
-import pandas as pd     
+import tkinter as tk
+from tkinter import messagebox, ttk
+import pandas as pd
 import json
 import os
-from datetime import datetime   
 
 # JSON 파일 경로
 JSON_FILE_PATH = "recipes.json"
@@ -16,6 +15,12 @@ def load_recipe_data():
             recipe_data = json.load(file)
     else:
         recipe_data = {}
+
+# JSON 파일 저장 함수
+def save_to_json():
+    with open(JSON_FILE_PATH, 'w', encoding='utf-8') as file:
+        json.dump(recipe_data, file, ensure_ascii=False, indent=4)
+    print(f"Saved recipes to {JSON_FILE_PATH}")
 
 # 초기 데이터 로드
 load_recipe_data()
@@ -31,40 +36,70 @@ def calculate_recipe_cost(recipe_name):
     recipe_ingredients = recipe_data.get(recipe_name)
     if recipe_ingredients:
         total_cost = 0
-        shortage = {}
         missing_ingredients = []
         for ingredient, amount in recipe_ingredients.items():
+            if ingredient in ['판매가', '원자재값']:
+                continue
+            ingredient_info = df[df["Name"] == ingredient]
+            if not ingredient_info.empty:
+                unit_price = float(ingredient_info.iloc[0]["Unit Price"])
+                total_cost += unit_price * int(amount)
+            else:
+                missing_ingredients.append(ingredient)
+        return total_cost, missing_ingredients
+    else:
+        return None, None
+
+def find_shortage_ingredients(recipe_name):
+    recipe_ingredients = recipe_data.get(recipe_name)
+    if recipe_ingredients:
+        shortage = {}
+        for ingredient, amount in recipe_ingredients.items():
+            if ingredient in ['판매가', '원자재값']:
+                continue
             ingredient_info = df[df["Name"] == ingredient]
             if not ingredient_info.empty:
                 available_quantity = int(ingredient_info.iloc[0]["Quantity"])
                 if available_quantity < int(amount):
                     shortage[ingredient] = int(amount) - available_quantity
-                unit_price = float(ingredient_info.iloc[0]["Unit Price"])
-                total_cost += unit_price * int(amount)
-            else:
-                missing_ingredients.append(ingredient)
-        return total_cost, shortage, missing_ingredients
+        return shortage
     else:
-        return None, None, None
+        return None
 
 def show_recipe_cost():
-    selected_recipe = recipe_combobox.get()  
+    selected_recipe = recipe_combobox.get()
     if selected_recipe:
-        cost, shortage, missing_ingredients = calculate_recipe_cost(selected_recipe)
+        cost, missing_ingredients = calculate_recipe_cost(selected_recipe)
         if cost is not None:
-            message = f"{selected_recipe}의 총 가격: {cost}원"
+            # 레시피의 원자재값을 JSON 파일에 저장
+            recipe_data[selected_recipe]['원자재값'] = cost
+            costper = cost*100/recipe_data[selected_recipe].get('판매가','설정되지 않음')
+            save_to_json()
+            
+            message = f"{selected_recipe}의 원자재값: {cost}원"
             if missing_ingredients:
-                message = "등록되지 않은 식재료가 존재합니다"
-                message += "\n등록되지 않은 식재료:\n"
+                message += "\n등록되지 않은 식재료가 존재합니다:\n"
                 for ingredient in missing_ingredients:
                     message += f"- {ingredient}\n"
-            elif shortage:
-                message += "\n\n부족한 식재료:\n"
-                for ingredient, amount in shortage.items():
-                    message += f"- {ingredient}: {amount}개\n"
-            messagebox.showinfo("레시피 가격, 부족한 식재료, 데이터프레임 부재료", message)
+                message += f"원가율 : {costper}%"
+            messagebox.showinfo("레시피 원자재값", message)
+
         else:
             messagebox.showerror("에러", "레시피 정보를 가져올 수 없거나 필요한 식재료가 부족합니다.")
+    else:
+        messagebox.showerror("에러", "레시피를 선택해주세요.")
+
+def show_shortage_ingredients():
+    selected_recipe = recipe_combobox.get()
+    if selected_recipe:
+        shortage = find_shortage_ingredients(selected_recipe)
+        if shortage:
+            message = "부족한 식재료:\n"
+            for ingredient, amount in shortage.items():
+                message += f"- {ingredient}: {amount}\n"
+            messagebox.showinfo("부족한 식재료", message)
+        else:
+            messagebox.showinfo("부족한 식재료", "부족한 식재료가 없습니다.")
     else:
         messagebox.showerror("에러", "레시피를 선택해주세요.")
 
@@ -76,9 +111,13 @@ def initialize(frame):
     recipe_combobox = ttk.Combobox(frame, values=list(recipe_data.keys()))
     recipe_combobox.pack(pady=10)
 
-    show_recipe_cost_button = tk.Button(frame, text="가격 및 부족한 식재료 보기", command=show_recipe_cost)
+    show_recipe_cost_button = tk.Button(frame, text="원자재가 확인", command=show_recipe_cost)
     apply_styles(show_recipe_cost_button, bg="#4caf50")
     show_recipe_cost_button.pack(pady=10)
+
+    show_shortage_ingredients_button = tk.Button(frame, text="부족한 식재료 보기", command=show_shortage_ingredients)
+    apply_styles(show_shortage_ingredients_button, bg="#f44336")
+    show_shortage_ingredients_button.pack(pady=10)
 
 def update_recipe_data():
     load_recipe_data()

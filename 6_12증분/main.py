@@ -37,7 +37,7 @@ for button in buttons:
     apply_styles(button, bg="#4caf50" if "식재료" in button.cget("text") else "#2196f3")
     button.pack(side=tk.LEFT, padx=5, pady=5)
 
-label = Label(main_frame, text="모듈을 선택하세요", font=("Helvetica", 16, "bold"), bg="#f0f0f0")
+label = Label(main_frame, text="원하는 메뉴를 선택하세요", font=("Helvetica", 16, "bold"), bg="#f0f0f0")
 label.pack(pady=20)
 
 root.mainloop()
