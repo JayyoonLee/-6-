@@ -29,8 +29,9 @@ buttons = [
     Button(button_frame, text="식재료 관리", command=lambda: initialize_frame(Pantry_Management, main_frame)),
     Button(button_frame, text="레시피 관리", command=lambda: initialize_frame(Recipe_List, main_frame)),
     Button(button_frame, text="레시피 원가 관리", command=lambda: initialize_frame(Recipe_Cost, main_frame)),
-    Button(button_frame, text="메뉴 인기 추천", command=lambda: initialize_frame(Menu_popular, main_frame)),
-    Button(button_frame, text="메뉴 비용 관리", command=lambda: initialize_frame(Menu_Cost, main_frame)),
+    Button(button_frame, text="정산 관리", command=lambda: initialize_frame(Menu_Cost, main_frame)),
+    Button(button_frame, text="인기 메뉴 추천", command=lambda: initialize_frame(Menu_popular, main_frame)),
+
 ]
 
 for button in buttons:

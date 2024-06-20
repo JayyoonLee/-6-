@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 import json
 import os
+import pandas as pd
+from datetime import datetime
 
 # JSON 파일 경로
 JSON_FILE_PATH = "recipes.json"
@@ -52,6 +54,10 @@ class RestaurantGUI:
         self.profit_button = tk.Button(self.master, text="이익 계산", command=self.calculate_profit)
         apply_styles(self.profit_button, bg="#607d8b")
         self.profit_button.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+
+        self.save_button = tk.Button(self.master, text="저장", command=self.save_to_csv)
+        apply_styles(self.save_button, bg="#4caf50")
+        self.save_button.grid(row=2, column=2, padx=10, pady=10, sticky="ew")
 
         self.info_text = tk.Text(self.master, height=10, width=50)
         self.info_text.grid(row=3, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
@@ -108,18 +114,59 @@ class RestaurantGUI:
             self.info_text.insert(tk.END, f"총 매출: {total_sales}원\n")
             self.info_text.insert(tk.END, f"총 이익: {total_profit}원\n")
 
+    def save_to_csv(self):
+        today = datetime.today().strftime('%Y-%m-%d')
+        total_sales = self.restaurant.calculate_sales()
+        total_expenses = self.restaurant.calculate_expenses()
+
+        # 기존 데이터를 로드
+        if os.path.exists('sales_settlement.csv'):
+            df = pd.read_csv('sales_settlement.csv')
+        else:
+            df = pd.DataFrame(columns=['DATE', '총 매출', '총 지출'])
+
+        # 현재 날짜의 데이터가 있는지 확인
+        if today in df['DATE'].values:
+            df.loc[df['DATE'] == today, '총 매출'] = total_sales
+            df.loc[df['DATE'] == today, '총 지출'] = total_expenses
+        else:
+            new_data = pd.DataFrame({'DATE': [today], '총 매출': [total_sales], '총 지출': [total_expenses]})
+            df = pd.concat([df, new_data], ignore_index=True)
+
+        df.to_csv('sales_settlement.csv', index=False)
+        
+        messagebox.showinfo("저장 완료", "데이터가 sales_settlement.csv 파일에 저장되었습니다.")
+
     def update_total_profit(self):
         if self.restaurant:
             total_profit = self.restaurant.calculate_profit()
             self.total_profit_value.config(text=f"{total_profit}원")
-
 class Restaurant:
     def __init__(self, name):
         self.name = name
         self.sales = {}
         self.expenses = 0
         self.profit = 0
+        self.total_sales = 0
         self.menu = {}
+        self.initial_sales = 0
+        self.initial_expenses = 0
+        self.load_today_sales_expenses()
+
+    def load_today_sales_expenses(self):
+        today = datetime.today().strftime('%Y-%m-%d')
+        if os.path.exists('sales_settlement.csv'):
+            df = pd.read_csv('sales_settlement.csv')
+            if today in df['DATE'].values:
+                today_data = df[df['DATE'] == today].iloc[0]
+                self.initial_sales = today_data['총 매출']
+                self.initial_expenses = today_data['총 지출']
+                self.total_sales = self.initial_sales
+                self.expenses = self.initial_expenses
+        if os.path.exists('menu_sales.csv'):
+            df_menu = pd.read_csv('menu_sales.csv')
+            for index, row in df_menu.iterrows():
+                self.sales[row['메뉴']] = row['count']
 
     def add_item_to_menu(self, item, price):
         self.menu[item] = price
@@ -130,22 +177,36 @@ class Restaurant:
                 self.sales[item] += quantity
             else:
                 self.sales[item] = quantity
+            self.save_to_menu_sales_csv(item, self.sales[item])  # 현재 총 수량을 파일에 반영
+
+    def save_to_menu_sales_csv(self, item, total_count):
+        if os.path.exists('menu_sales.csv'):
+            df = pd.read_csv('menu_sales.csv')
+            if item in df['메뉴'].values:
+                df.loc[df['메뉴'] == item, 'count'] = total_count  # 총 수량을 갱신
+            else:
+                new_row = pd.DataFrame({'메뉴': [item], 'count': [total_count]})
+                df = pd.concat([df, new_row], ignore_index=True)
+        else:
+            df = pd.DataFrame({'메뉴': [item], 'count': [total_count]})
+        df.to_csv('menu_sales.csv', index=False)
 
     def record_expense(self, expense):
-        self.expenses += expense
+        self.expenses += expense  # 즉시 업데이트
 
     def calculate_sales(self):
-        total_sales = 0
+        self.total_sales = self.initial_sales  # 초기값으로 설정
         for item, quantity in self.sales.items():
-            total_sales += self.menu[item] * quantity
-        return total_sales
+            self.total_sales += self.menu[item] * quantity
+        return self.total_sales
 
     def calculate_expenses(self):
         return self.expenses
 
     def calculate_profit(self):
         total_sales = self.calculate_sales()
-        self.profit = total_sales - self.expenses
+        total_expenses = self.calculate_expenses()
+        self.profit = total_sales - total_expenses
         return self.profit
 
 def apply_styles(widget, font=("Helvetica", 14), bg=None, fg="white"):
@@ -169,3 +230,5 @@ if __name__ == "__main__":
     initialize(main_frame)
 
     root.mainloop()
+
+

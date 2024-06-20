@@ -18,9 +18,8 @@ def save_to_json():
     with open(JSON_FILE_PATH, 'w', encoding='utf-8') as file:
         json.dump(recipes, file, ensure_ascii=False, indent=4)
     print(f"Saved recipes to {JSON_FILE_PATH}")
-    # Recipe_Cost 모듈의 update_recipe_data 함수 호출 시 recipe_combobox를 참조하지 않도록 변경
-    if hasattr(Recipe_Cost, 'update_recipe_data'):
-        Recipe_Cost.update_recipe_data()
+    if hasattr(Recipe_Cost, 'RecipeCostApp'):
+        Recipe_Cost.RecipeCostApp.update_recipe_data(Recipe_Cost.RecipeCostApp)
 
 def apply_styles(widget, font=("Helvetica", 14), bg=None, fg="white"):
     widget.config(font=font, bg=bg, fg=fg, relief="solid")
@@ -35,9 +34,11 @@ def initialize(frame):
         add_window.attributes("-topmost", True)
 
         Label(add_window, text="레시피 이름:", bg="#f0f0f0").grid(row=0, column=0)
+        Label(add_window, text="판매가 :", bg="#f0f0f0").grid(row=1, column=0)
         name_entry = Entry(add_window)
         name_entry.grid(row=0, column=1)
-
+        count_entry = Entry(add_window)
+        count_entry.grid(row=1, column=1)
         ingredients = {}
 
         def add_ingredient():
@@ -47,6 +48,7 @@ def initialize(frame):
             ingredient_window.attributes("-topmost", True)
 
             Label(ingredient_window, text="재료 이름:", bg="#f0f0f0").grid(row=0, column=0)
+
             ingredient_name_entry = Entry(ingredient_window)
             ingredient_name_entry.grid(row=0, column=1)
 
@@ -66,27 +68,28 @@ def initialize(frame):
 
             confirm_button = Button(ingredient_window, text="확인", command=confirm_ingredient)
             apply_styles(confirm_button, bg="#4caf50")
-            confirm_button.grid(row=2, columnspan=2, pady=10)
+            confirm_button.grid(row=3, columnspan=2, pady=10)
 
         add_ingredient_button = Button(add_window, text="재료 추가", command=add_ingredient)
         apply_styles(add_ingredient_button, bg="#2196f3")
-        add_ingredient_button.grid(row=1, columnspan=2, pady=10)
+        add_ingredient_button.grid(row=2, columnspan=2, pady=10)
 
         def confirm_recipe():
             name = name_entry.get()
             if name and ingredients:
                 recipes[name] = ingredients
-                recipes[name]['판매가'] = 0
+                recipes[name]['판매가'] = int(count_entry.get())
                 recipes[name]['원자재값'] = 0
                 save_to_json()
                 messagebox.showinfo("레시피 추가 완료", f"{name} 레시피가 추가되었습니다.")
                 add_window.destroy()
+                Recipe_Cost.RecipeCostApp.update_recipe_data(Recipe_Cost.RecipeCostApp)
             else:
                 messagebox.showerror("입력 오류", "레시피 이름과 최소 한 가지 재료를 입력해주세요.")
 
         confirm_button = Button(add_window, text="레시피 추가", command=confirm_recipe)
         apply_styles(confirm_button, bg="#4caf50")
-        confirm_button.grid(row=2, columnspan=2, pady=10)
+        confirm_button.grid(row=3, columnspan=2, pady=10)
 
     def view_recipes():
         recipes_window = Toplevel(frame)
@@ -157,6 +160,7 @@ def initialize(frame):
                     messagebox.showinfo("레시피 수정", f"{selected_recipe} 레시피가 수정되었습니다.")
                     edit_window.destroy()
                     update_window.destroy()
+                    Recipe_Cost.RecipeCostApp.update_recipe_data(Recipe_Cost.RecipeCostApp)
 
                 confirm_button = Button(edit_window, text="수정", command=confirm)
                 apply_styles(confirm_button, bg="#2196f3")
@@ -201,7 +205,6 @@ def initialize(frame):
 
                     vars = {}
                     row = 0
-
                     for ingredient in filtered_ingredients:
                         var = IntVar()
                         chk = Checkbutton(delete_window, text=ingredient, variable=var, bg="#f0f0f0")
@@ -219,6 +222,7 @@ def initialize(frame):
                         edit_window.destroy()
                         update_window.destroy()
                         update_recipe()
+                        Recipe_Cost.RecipeCostApp.update_recipe_data(Recipe_Cost.RecipeCostApp)
 
                     confirm_button = Button(delete_window, text="삭제", command=confirm_delete)
                     apply_styles(confirm_button, bg="#f44336")
@@ -255,6 +259,7 @@ def initialize(frame):
                 delete_window.destroy()
                 del recipes[selected_recipe]
                 save_to_json()
+                Recipe_Cost.RecipeCostApp.update_recipe_data(Recipe_Cost.RecipeCostApp)
             else:
                 messagebox.showerror("오류", "삭제할 레시피를 선택해주세요.")
 
@@ -283,7 +288,7 @@ def initialize(frame):
             edit_window = Toplevel(price_window)
             edit_window.title(f"{selected_recipe} 가격 설정")
             edit_window.config(bg="#f0f0f0")
-            edit_window.attributes("-topmost", True)  # 창을 최상위로 설정
+            edit_window.attributes("-topmost", True)
 
             Label(edit_window, text="가격:", bg="#f0f0f0").grid(row=0, column=0)
             price_entry = Entry(edit_window)
@@ -292,15 +297,15 @@ def initialize(frame):
             def confirm():
                 price = price_entry.get()
                 try:
-                    price = float(price)
+                    price = int(price)
                     recipes[selected_recipe]['판매가'] = price
                     save_to_json()
                     messagebox.showinfo("가격 설정", f"{selected_recipe} 레시피의 가격이 {price}원으로 설정되었습니다.")
                     edit_window.destroy()
                     price_window.destroy()
+                    Recipe_Cost.RecipeCostApp.update_recipe_data(Recipe_Cost.RecipeCostApp)
                 except ValueError:
                     messagebox.showerror("입력 오류", "유효한 숫자를 입력해주세요.")
-
 
             confirm_button = Button(edit_window, text="설정", command=confirm)
             apply_styles(confirm_button, bg="#4caf50")
@@ -313,7 +318,7 @@ def initialize(frame):
         ("레시피 보기", view_recipes, "#2196f3"),
         ("레시피 수정", update_recipe, "#ff9800"),
         ("레시피 삭제", delete_recipe, "#f44336"),
-        ("가격 설정", set_price,"#795548")
+        ("가격 설정", set_price, "#795548")
     ]
 
     for text, command, color in buttons:
